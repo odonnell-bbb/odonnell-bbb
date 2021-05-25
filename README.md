@@ -1,6 +1,5 @@
 - 👋 Hi, I’m @odonnell-bbb
-- 👀 Social Research & Analysis
-- 🌱 github
+- Social Research & Analysis
 - odonnell.bbb@gmail.com
 
 <!---
