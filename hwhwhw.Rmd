@@ -1,0 +1,297 @@
+---
+title: "test."
+output: html_document
+---
+
+#1.Build a tuning procedure for the hyperparameter of K using "tidymodels." 
+#Please make sure you include all the following steps: 
+#a.) split data into training and testing sets (70%-30% split)
+
+```{r}
+library(tidyverse)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(tidymodels)
+library(randomForest)
+library(pROC)
+library(kknn)
+library(class)
+```
+
+```{r, include=FALSE}
+setwd("~/Downloads/DA")
+```
+
+```{r}
+churn.df <- read.csv("Churn.csv", header=TRUE)
+```
+
+```{r}
+churn.df<-churn.df%>%select(gender,SeniorCitizen,Partner,Dependents,tenure,MonthlyCharges,Contract,Churn)
+
+churn.df<-drop_na(churn.df)
+
+churn.df$gender<-as.factor(churn.df$gender)
+churn.df$Dependents<-as.factor(churn.df$Dependents)
+churn.df$Partner<-as.factor(churn.df$Partner)
+churn.df$Contract<-as.factor(churn.df$Contract)
+
+norm_func<-function(x){(x-min(x))/(max(x)-min(x))}
+```
+
+```{r}
+set.seed(123)
+churn.split<-initial_split(churn.df, prop=.7, strata = Churn)
+churn.train<-training(churn.split)
+churn.test<-testing(churn.split)
+```
+
+#b.) specify a re-sampling procedure (10-fold cross-validation), 
+
+```{r}
+k_fold<-vfold_cv(churn.train)
+```
+
+#c.) create a recipe and preprocessing steps,
+
+```{r}
+set.seed(123)
+model_rec<-recipe(Churn~., churn.train) %>%
+  step_dummy(all_nominal(), -all_outcomes()) %>%
+  step_range(all_numeric())
+
+model_rec%>%prep() %>% juice%>%summary()
+```
+
+
+#d.) specify the metrics you eventually need (make sure you include accuracy, sensitivity, specificity, and roc_auc),
+
+
+---
+date: "`r Sys.Date()`"
+author: "Your Name"
+title: "officedown template"
+output: 
+  officedown::rdocx_document:
+    mapstyles:
+      Normal: ['First Paragraph']
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.cap = TRUE)
+library(officedown)
+library(officer)
+```
+ 
+```{r, include=FALSE}
+library(tidymodels)
+library(tidyverse)
+library(caret)
+library(class)
+library(kknn)
+```
+
+```{r, include=FALSE}
+setwd("~/Downloads/DA")
+```
+
+```{r, include=FALSE}
+project2 <- read.csv("Churn.csv", header=TRUE)
+```
+
+```{r Churn. DF, include=FALSE}
+subset1<-dplyr::select(project2, "gender", "SeniorCitizen", "Partner", "Dependents", "tenure", "MonthlyCharges", "Contract", "Churn")
+```
+
+```{r, include=TRUE, message=FALSE, results='hide'}
+subset1<-subset1 %>% rename_all(function(.name){.name %>% tolower})
+```
+
+```{r RECODE: Churn, include=TRUE}
+levels(subset1$churn %>% as.factor())
+```
+
+```{r, include=TRUE, message=FALSE}
+subset1<-subset1 %>% 
+  drop_na() %>% 
+  mutate_all(as.factor) %>% 
+  mutate(tenure=as.numeric(tenure),
+         monthlycharges=as.numeric(monthlycharges))
+```
+
+```{r, include=TRUE, message=FALSE, results='hide'}
+subset1<-subset1 %>% mutate(churn=fct_rev(churn))
+levels(subset1$churn)
+```
+```{r, include=TRUE, message=FALSE}
+round(prop.table(table(subset1$churn)) * 100, digits = 1)
+```
+
+```{r, include=TRUE, message=FALSE}
+colSums(sapply(subset1, is.na))
+str(subset1)
+```
+
+We have worked on the “Churn” data set several times this semester: building both decision tree, regression tree, and random forest models to predict whether people churn or not. In this project, we will try the K Nearest Neighbor model on it. Recall that the “Churn” variable is a binary categorical variable showing whether a customer has “churned” or not. “Churn” means terminating the subscription or leaving the company.Please include the following variables in your subset: gender, SeniorCitizen, Partner Dependents, tenure, MonthlyCharges, Contract, Churn.Before you start estimating KNN models, please make sure you code all variables properly (ex. all character variables into factors.)KNN requires that all factors be coded into numeric dummy variables. Please include the following segment “step_dummy(all_nominal(), -all_outcomes())”as one of the pre-processing steps (when creating recipe). This step codes all factors into dummy variables (a k-category variable is coded into k-1 dummies) except the target.
+
+1.Build a tuning procedure for the hyperparameter of K using “tidymodels.” Please make sure you include all the following steps:
+
+a.) split data into training and testing sets (70%-30% split), 
+
+```{r, include=TRUE, message=FALSE}
+set.seed(123)
+subset.split<-initial_split(subset1, prop=.7, strata = churn)
+subset.train<-training(subset.split)
+subset.test<-testing(subset.split)
+```
+
+b.) specify a re-sampling procedure (10-fold cross-validation), 
+
+```{r, include=TRUE, message=FALSE}
+# split training set 90|10
+k_fold<-vfold_cv(subset.train)
+```
+
+c.) create a recipe and preprocessing steps, 
+
+```{r, include=TRUE, message=FALSE}
+model.rec<-recipe(churn~., subset.train) %>% step_range(all_numeric()) %>% step_dummy(all_nominal(),-all_outcomes())
+
+model.rec %>% prep() %>% juice() %>% summary()
+```
+
+d.) specify the metrics you eventually need (make sure you include accuracy, sensitivity, specificity, and roc_auc), 
+
+```{r, include=TRUE, message=FALSE}
+# sens - out of all the positive classes how many were correctly predicted
+c.metrics<-yardstick::metric_set(accuracy,
+                      sens,
+                      roc_auc
+                      )
+```
+
+e.) save the predicted value using model control grid, and 
+
+```{r, include=TRUE, message=FALSE}
+m_control<-control_grid(save_pred=TRUE)
+```
+
+f.) set the mode and engine for the tuning process. Please place your code in order and explain each segment using a hashtag if necessary. (To make sure that your results are reproducible, you need to set the random seeds consistently at each random step)
+
+```{r, include=TRUE, message=FALSE}
+set.seed(123)
+knn_model<-nearest_neighbor(neighbors= tune("K")) %>% 
+  set_mode("classification") %>% 
+  set_engine("kknn")
+```
+
+```{r, include=TRUE, message=FALSE}
+knn_grid<- grid_regular(parameters(knn_model), levels=5)
+```
+
+2.Tune K in a KNN model and obtain plots for all mean metrics. Which metric(s) shows a clear pattern when K increases, which does not if any? What is the best K if you are to base your decision on the mean “accuracy” or “roc_auc” alone? 
+
+```{r}
+set.seed(123)
+knn.tune<-tune_grid(
+  knn_model,
+  model.rec,
+  resamples=k_fold,
+  control=m_control,
+  metrics=c.metrics
+  )
+```
+
+```{r}
+set.seed(123)
+knn.tune %>% 
+  collect_metrics() %>% 
+  ggplot(aes(x=K,y=mean))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~.metric, scales="free_y")
+```
+# Accuracy and roc_auc show a clear pattern when K increases these metrics also increase. If the best K was based solely on accuracy and roc_auc I would pick the highest point which is k=14 or k=15.
+
+```{r}
+set.seed(123)
+knn.tune %>% select(id, .metrics) %>% 
+  unnest(.metrics) %>% 
+  ggplot(aes(x=neighbors, y=.estimate, color=id))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~.metric, scales="free_y")
+```
+# roc_auc shows to be increasing steadily.
+
+3.“Collect” the predicted values that have resulted from the tuning process and obtain a confusion matrix. What is the sample size according to the confusion matrix? Explain why it is much larger than the size of the training set.
+
+```{r, include=TRUE, message=FALSE}
+pred.data<-knn.tune%>%
+collect_predictions() %>%
+  mutate(pred=if_else(.pred_No>=0.5, "No","Yes"),
+         pred=as.factor(pred)) 
+
+c.data.met %>%
+  conf_mat(churn, pred)
+```
+
+# The process used the training set sample size 10 times that is why the sample size is larger with 44379 obs. (49310*.10=4931) (49310-4931=44379) 90 % of the training set which indicates the confusion matrix ran successfully. 
+
+4.What are the mean accuracy and mean sensitivity that have resulted from the tuning process? 
+
+```{r}
+pred.data %>% accuracy(churn, pred)
+```
+
+```{r}
+# we wanna maximize the sensitivity score
+pred.data %>% sens(churn, pred)
+```
+
+# This indicates that we will be correct 85% of the time when predicting positive cases in this dataset (yes churn).
+
+5.If you are to decide on the best K based on the mean “accuracy,” “sensitivity,” “specificity,” and “roc_auc” respectively, how many different K’s are suggested? what is/are the best K? Which metric(s) seems to differ from the others in its recommendation? Justify your final decision on your choice of K.
+
+```{r}
+knn.tune %>% collect_metrics() %>% filter(.metric=="roc_auc") %>% top_n(mean, n=1)
+```
+
+```{r}
+knn.tune %>% collect_metrics() %>% filter(.metric=="sens") %>% top_n(mean, n=1)
+```
+
+```{r}
+knn.tune %>% collect_metrics() %>% filter(.metric=="accuracy") %>% top_n(mean, n=1)
+```
+
+```{r}
+knn.tune %>% select_best(metric="roc_auc")
+knn.tune %>% select_best(metric="accuracy")
+knn.tune %>% select_best(metric="sens")
+```
+# The accuracy, roc_auc and sens all indicate that k=14 is the best decision. 
+
+6.Use the best K you have obtained from the previous step and estimate the best model. What are the accuracy and roc_auc of this model? Compared with the decision tree models you estimated for project 2, does the KNN model yield better or worse metrics? 
+
+```{r}
+model14<-nearest_neighbor(neighbors=14) %>% 
+  set_mode("classification") %>% 
+  set_engine("kknn")
+
+best_model<-workflow() %>% 
+  add_model(model14)
+  add_recipe(model.rec)
+```
+
+```{r}
+last_fit(best_model, subset.split) %>% collect_metrics()
+```
+
+
+
+
+
+
+

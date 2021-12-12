@@ -1,0 +1,108 @@
+---
+date: "`r Sys.Date()`"
+author: "Brooke O'Donnell"
+title: "Project 4"
+subtitle: "K Nearest Neighbor"
+output: 
+  officedown::rdocx_document:
+    mapstyles:
+      Normal: ['First Paragraph']
+---
+
+```{r, include=FALSE}
+library(tidymodels)
+library(tidyverse)
+library(caret)
+library(class)
+library(kknn)
+library(officedown)
+library(officer)
+library(readr)
+library(dplyr)
+```
+
+```{r, include=FALSE}
+setwd("~/Downloads/DA")
+```
+
+```{r}
+project2 <- read_csv("Downloads/Churn.csv")
+```
+
+
+```
+
+```{r Churn. DF, include=FALSE}
+subset1<-dplyr::select(project2, "gender", "SeniorCitizen", "Partner", "Dependents", "tenure", "MonthlyCharges", "Contract", "Churn")
+```
+
+```{r RENAMING, include=FALSE}
+
+subset1<-subset1%>%dplyr::rename(senior=SeniorCitizen,
+
+ mcharge=MonthlyCharges)
+
+```
+
+```{r AS. function, include=FALSE}
+subset1$tenure<-as.numeric(subset1$tenure)
+
+subset1$mcharge<-as.numeric(subset1$mcharge)
+
+subset1$Partner<-as.factor(subset1$Partner)
+
+subset1$Contract=as.factor(subset1$Contract)
+
+subset1$Churn=as.factor(subset1$Churn)
+
+subset1$Dependents<-as.factor(subset1$Dependents)
+
+subset1$gender=as.factor(subset1$gender)
+```
+
+```{r RECODE: senior & gender, include=FALSE}
+
+subset1<-subset1 %>% mutate(senior=recode_factor(senior,
+
+ '1'="Senior",
+
+ '0'="N.S"))
+
+subset1<-subset1 %>% mutate(gender=recode_factor(gender,
+
+ 'Female'="F",
+
+ 'Male'="M"))
+
+```
+
+```{r RECODE: Churn, include=FALSE}
+
+subset1<-subset1 %>% mutate(Churn=recode_factor(Churn,
+
+ 'Yes'="Yes.churn",
+
+ 'No'="No.churn"))
+
+```
+
+We have worked on the “Churn” data set several times this semester: building both decision tree, regression tree, and random forest models to predict whether people churn or not. In this project, we will try the K Nearest Neighbor model on it. Recall that the “Churn” variable is a binary categorical variable showing whether a customer has “churned” or not. “Churn” means terminating the subscription or leaving the company.Please include the following variables in your subset: gender, SeniorCitizen, Partner Dependents, tenure, MonthlyCharges, Contract, Churn.Before you start estimating KNN models, please make sure you code all variables properly (ex. all character variables into factors.)KNN requires that all factors be coded into numeric dummy variables. Please include the following segment “step_dummy(all_nominal(), -all_outcomes())”as one of the pre-processing steps (when creating recipe). This step codes all factors into dummy variables (a k-category variable is coded into k-1 dummies) except the target.
+
+1.Build a tuning procedure for the hyperparameter of K using “tidymodels.” Please make sure you include all the following steps: a.) split data into training and testing sets (70%-30% split), 
+
+b.) specify a re-sampling procedure (10-fold cross-validation), 
+c.) create a recipe and preprocessing steps, 
+d.) specify the metrics you eventually need (make sure you include accuracy, sensitivity, specificity, and roc_auc), 
+e.) save the predicted value using model control grid, and 
+f.) set the mode and engine for the tuning process. Please place your code in order and explain each segment using a hashtag if necessary. (To make sure that your results are reproducible, you need to set the random seeds consistently at each random step)
+
+2.Tune K in a KNN model and obtain plots for all mean metrics. Which metric(s) shows a clear pattern when K increases, which does not if any? What is the best K if you are to base your decision on the mean “accuracy” or “roc_auc” alone? 
+
+3.“Collect” the predicted values that have resulted from the tuning process and obtain a confusion matrix. What is the sample size according to the confusion matrix? Explain why it is much larger than the size of the training set.
+
+4.What are the mean accuracy and mean sensitivity that have resulted from the tuning process? 
+
+5.If you are to decide on the best K based on the mean “accuracy,” “sensitivity,” “specificity,” and “roc_auc” respectively, how many different K’s are suggested? what is/are the best K? Which metric(s) seems to differ from the others in its recommendation? Justify your final decision on your choice of K.
+
+6.Use the best K you have obtained from the previous step and estimate the best model. What are the accuracy and roc_auc of this model? Compared with the decision tree models you estimated for project 2, does the KNN model yield better or worse metrics? 
+
